@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Parcel Express Admin Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input, button, textarea { margin: 5px 0; display: block; }
+    .section { margin-bottom: 30px; border-bottom: 1px solid #ccc; padding-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Parcel Express Admin Panel</h1>
+
+  <div class="section">
+    <h2>Create Tracking Number</h2>
+    <input type="text" id="sender" placeholder="Sender Name">
+    <input type="text" id="receiver" placeholder="Receiver Name">
+    <input type="text" id="weight" placeholder="Parcel Weight (e.g. 2kg)">
+    <button onclick="createTracking()">Create</button>
+    <p id="createdTracking"></p>
+  </div>
+
+  <div class="section">
+    <h2>Update Status</h2>
+    <input type="text" id="statusTrackingNumber" placeholder="Tracking Number">
+    <textarea id="statusText" placeholder="Enter new status"></textarea>
+    <button onclick="updateStatus()">Update</button>
+  </div>
+
+  <div class="section">
+    <h2>Upload Proof of Delivery</h2>
+    <input type="text" id="photoTrackingNumber" placeholder="Tracking Number">
+    <input type="file" id="photoInput">
+    <button onclick="uploadPhoto()">Upload</button>
+  </div>
+
+  <div class="section">
+    <h2>Print Shipping Label</h2>
+    <input type="text" id="labelTrackingNumber" placeholder="Tracking Number">
+    <button onclick="openLabel()">Print Label</button>
+  </div>
+
+  <script>
+    function createTracking() {
+      const sender = document.getElementById("sender").value;
+      const receiver = document.getElementById("receiver").value;
+      const weight = document.getElementById("weight").value;
+
+      fetch("/api/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ labelData: { sender, receiver, weight } }),
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("createdTracking").textContent = "Tracking Number: " + data.trackingNumber;
+      });
+    }
+
+    function updateStatus() {
+      const trackingNumber = document.getElementById("statusTrackingNumber").value;
+      const status = document.getElementById("statusText").value;
+
+      fetch("/api/updateStatus", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trackingNumber, status }),
+      }).then(res => {
+        if (res.ok) alert("Status updated!");
+        else alert("Error updating status.");
+      });
+    }
+
+    function uploadPhoto() {
+      const trackingNumber = document.getElementById("photoTrackingNumber").value;
+      const photoInput = document.getElementById("photoInput");
+      if (!photoInput.files.length) return alert("Please choose a file.");
+
+      const formData = new FormData();
+      formData.append("photo", photoInput.files[0]);
+      formData.append("trackingNumber", trackingNumber);
+
+      fetch("/api/uploadPhoto", {
+        method: "POST",
+        body: formData,
+      }).then(res => {
+        if (res.ok) alert("Photo uploaded!");
+        else alert("Upload failed.");
+      });
+    }
+
+    function openLabel() {
+      const trackingNumber = document.getElementById("labelTrackingNumber").value;
+      window.open("/label/" + trackingNumber, "_blank");
+    }
+  </script>
+</body>
+</html>
